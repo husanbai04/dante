@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Calculator</title>
+    <link rel="icon" href="icons.png" type="image/x-icon">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: linear-gradient(to right, #f8f9fa, #e9ecef);
+            color: #343a40;
+        }
+        h1 {
+            text-align: center;
+            color: #495057;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .subject-container {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ced4da;
+            border-radius: 5px;
+            background-color: #ffffff;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .subject-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .grades-container {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+        }
+        .grades-container input {
+            width: 100%;
+            padding: 5px;
+            border: 1px solid #ced4da;
+            border-radius: 3px;
+        }
+        .result {
+            margin-top: 10px;
+            font-weight: bold;
+            color: #212529;
+        }
+        #add-subject-btn {
+            display: block;
+            margin: 20px auto;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Калькулятор Оценок</h1>
+    <div id="subjects"></div>
+    <button id="add-subject-btn" onclick="addSubject()">Добавить Предмет</button>
+
+    <script>
+        let subjectCount = 0;
+
+        // Функция для добавления нового предмета
+        function addSubject() {
+            subjectCount++;
+            const subjectContainer = document.createElement('div');
+            subjectContainer.classList.add('subject-container');
+
+            subjectContainer.innerHTML = `
+                <div class="subject-header">
+                    <input type="text" placeholder="Название предмета" id="subject-name-${subjectCount}">
+                    <button onclick="calculateGrade(${subjectCount})">Рассчитать Оценку</button>
+                </div>
+                <div class="grades-container" id="grades-container-${subjectCount}">
+                    ${Array.from({ length: 15 }, (_, i) => `
+                        <div>
+                            <input type="text" placeholder="Неделя ${i + 1} Лекции" id="subject-${subjectCount}-week-${i + 1}-lecture">
+                            <input type="text" placeholder="Неделя ${i + 1} Лабораторные" id="subject-${subjectCount}-week-${i + 1}-lab">
+                            <input type="text" placeholder="Неделя ${i + 1} СРС" id="subject-${subjectCount}-week-${i + 1}-srs">
+                        </div>
+                    `).join('')}
+                </div>
+                <div class="result" id="result-${subjectCount}">Итоговая Оценка: 0</div>
+            `;
+
+            document.getElementById('subjects').appendChild(subjectContainer);
+        }
+
+        // Функция для расчета итоговой оценки
+        function calculateGrade(subjectId) {
+            let totalGrade = 0;
+            let totalWeeks = 0;
+
+            for (let i = 1; i <= 15; i++) {
+                const lectureInput = document.getElementById(`subject-${subjectId}-week-${i}-lecture`);
+                const labInput = document.getElementById(`subject-${subjectId}-week-${i}-lab`);
+                const srsInput = document.getElementById(`subject-${subjectId}-week-${i}-srs`);
+
+                // Проверяем значения для каждой ячейки
+                const lectureGrade = parseGrade(lectureInput.value);
+                const labGrade = parseGrade(labInput.value);
+                const srsGrade = parseGrade(srsInput.value);
+
+                // Если хотя бы одна ячейка имеет "н.п.", то пропускаем
+                if (lectureGrade !== null) totalGrade += lectureGrade, totalWeeks++;
+                if (labGrade !== null) totalGrade += labGrade, totalWeeks++;
+                if (srsGrade !== null) totalGrade += srsGrade, totalWeeks++;
+            }
+
+            // Рассчитываем оценку за два периода
+            const gradingPeriods = totalWeeks > 0 ? Math.min(60, (totalGrade / totalWeeks) * 60 / 100) : 0; // Максимум 60 баллов за два периода (15 недель x 3 категории)
+            const examScore = prompt("Введите оценку за экзамен (из 40):", 0);
+            const examPoints = Math.min(40, parseInt(examScore) || 0);
+
+            // Итоговая оценка
+            const finalGrade = gradingPeriods + examPoints;
+            document.getElementById(`result-${subjectId}`).textContent = `Итоговая Оценка: ${finalGrade.toFixed(2)} / 100`;
+        }
+
+        // Функция для обработки ввода (позволяет вводить числа, "н.н." или "н.п.")
+        function parseGrade(value) {
+            if (value === "" || value.toLowerCase() === "н.н.") {
+                return 0; // Если введено "н.н." или пустое поле, то считается как 0 баллов
+            }
+            if (value.toLowerCase() === "н.п.") {
+                return null; // Если введено "н.п.", ячейка не будет учитываться в расчете
+            }
+            const grade = parseInt(value);
+            return isNaN(grade) ? 0 : grade; // Если введено не число, то считаем как 0 баллов
+        }
+    </script>
+</body>
+</html>
